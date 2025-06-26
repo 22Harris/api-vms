@@ -1,4 +1,5 @@
 const StudentModel = require('../models/students.models');
+const VoteModel = require('../../votes/models/votes.models');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
@@ -57,7 +58,8 @@ const sendMailToStudentEmail = async (studentEmail, verificationCode) => {
 };
 
 exports.initialLoginStudent = async (req, res) => {
-    const { email, IM } = req.body;
+  const { year } = req.params;
+  const { email, IM } = req.body;
   
     if (!email || !IM) {
       return res.status(400).json({
@@ -72,6 +74,14 @@ exports.initialLoginStudent = async (req, res) => {
             return res.status(401).json({
             success: false,
             message: 'Identifiants incorrects',
+        });
+      }
+
+      const studentAlreadyVoted = await VoteModel.findOne({ where: { studentId: student.ID, year }});
+      if(studentAlreadyVoted){
+        return res.status(409).json({
+          success: false,
+          message: 'Cet étudiant a déjà voté pour cette année',
         });
       }
   
