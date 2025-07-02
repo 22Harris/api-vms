@@ -7,33 +7,27 @@ const Candidate = sequelize.define('Candidate', {
         autoIncrement: true,
         primaryKey: true
     },
-    studentId: {
+    electionId: {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    studentIM: {
-        type: DataTypes.STRING,
+    studentId: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-    },
-    studentSector: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    studentLevel: {
-        type: DataTypes.STRING,
-        allowNull: false, 
     },
     number: {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    year: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
     numberOfVote: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
+    },
+    slogan: {
+        type: DataTypes.STRING,
+    },
+    description: {
+        type: DataTypes.STRING,
     }
 }, {
     tableName: 'candidates',

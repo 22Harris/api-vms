@@ -1,11 +1,12 @@
 const CandidateModel = require('../models/candidates.models');
 const StudentModel = require('../../students/models/students.models');
+const ElectionModel = require('../../elections/models/elections.models');
 
 exports.createCandidate = async(req, res) => {
-    const { studentId } = req.params;
-    const { number, year, slogan, description } = req.body;
+    const { electionId, studentId } = req.params;
+    const { number, slogan, description } = req.body;
 
-    if (!number || !year) {
+    if (!number) {
         return res.status(400).json({
             success: false,
             message: 'Le numéro et l\'année sont obligatoires',
@@ -14,6 +15,20 @@ exports.createCandidate = async(req, res) => {
 
     try {
 
+        const election = await ElectionModel.findByPk(electionId);
+        if(!election){
+            return res.status(404).json({
+                success: false,
+                message: 'Election non trouvé',
+            });
+        }
+        if(!election.isOpen){
+            return res.status(500).json({
+                success: false,
+                message: 'Election fermée',
+            });
+        }
+        
         const student = await StudentModel.findByPk(studentId);
         if (!student) {
             return res.status(404).json({
@@ -25,7 +40,7 @@ exports.createCandidate = async(req, res) => {
         const existingCandidate = await CandidateModel.findOne({
             where: {
                 studentId,
-                year
+                electionId
             }
         });
 
@@ -39,10 +54,9 @@ exports.createCandidate = async(req, res) => {
         const numberUsed = await CandidateModel.findOne({
             where: {
                 number,
-                year
+                electionId
             }
         });
-
         if (numberUsed) {
             return res.status(409).json({
                 success: false,
@@ -52,13 +66,10 @@ exports.createCandidate = async(req, res) => {
 
         const newCandidate = await CandidateModel.create({
             number,
-            year,
+            electionId,
             slogan: slogan || null,
             description: description || null,
             studentId,
-            studentIM: student.IM,
-            studentSector: student.sector,
-            studentLevel: student.level,
             numberOfVote: 0
         });
 
@@ -69,7 +80,6 @@ exports.createCandidate = async(req, res) => {
                 candidate: {
                     id: newCandidate.id,
                     number: newCandidate.number,
-                    year: newCandidate.year,
                     student: {
                         id: student.ID,
                         fullName: student.fullName,

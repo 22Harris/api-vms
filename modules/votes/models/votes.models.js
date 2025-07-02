@@ -7,8 +7,8 @@ const Vote = sequelize.define('Vote', {
         autoIncrement: true,
         primaryKey: true,
     },
-    year: {
-        type: DataTypes.STRING,
+    electionId : {
+        type: DataTypes.INTEGER,
         allowNull: false,
     },
     votedAt: {
@@ -18,28 +18,10 @@ const Vote = sequelize.define('Vote', {
     studentId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-            model: 'students',
-            key: 'ID'
-        }
     },
-    candidateId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'candidates',
-            key: 'id'
-        }
-    }
 }, {
     tableName: 'votes',
     timestamps: false,
-    indexes: [
-        {
-            unique: true,
-            fields: ['year', 'studentId']
-        }
-    ]
 });
 
 module.exports = Vote;

@@ -3,9 +3,11 @@ const express = require('express');
 const sequelize = require('./configs/sequelize');
 const cors = require('cors');
 
-const studentRoutes = require('./modules/students/routes/students.routes');
-const candidateRoutes = require('./modules/candidates/routes/candidates.routes');
+const studentsRoutes = require('./modules/students/routes/students.routes');
+const candidatesRoutes = require('./modules/candidates/routes/candidates.routes');
 const votesRoutes = require('./modules/votes/routes/votes.routes');
+const electionsRoutes = require('./modules/elections/routes/elections.routes');
+const historicalRoutes = require('./modules/historical/routes/historical.routes');
 
 require('./modules/associations/associations.modules');
 
@@ -15,9 +17,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/students', studentRoutes);
-app.use('/api/candidates', candidateRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/candidates', candidatesRoutes);
 app.use('/api/votes', votesRoutes);
+app.use('/api/elections', electionsRoutes)
+app.use('/api/historical', historicalRoutes);
 
 app.use((req, res) => {
     res.status(404).json({

@@ -1,21 +1,25 @@
 const VoteModel = require('../models/votes.models');
 const StudentModel = require('../../students/models/students.models');
 const CandidateModel = require('../../candidates/models/candidates.models');
+const ElectionModel = require('../../elections/models/elections.models');
 const sequelize = require('../../../configs/sequelize');
 
 
 exports.createVote = async(req, res) => {
-    const { year, candidateId, studentId } = req.params;
-    
-    if (!year || !candidateId || !studentId) {
-        return res.status(400).json({
-            success: false,
-            message: 'Tous les paramètres (year, candidateId, studentId) sont requis',
-        });
-    }
+    const { electionId, studentId } = req.params;
+    const { candidateId, voteStatus } = req.body;
 
     let transaction;
     try {
+
+        const election = await ElectionModel.findByPk(electionId);
+        if(!election){
+            return res.status(404).json({
+                success: false,
+                message: 'Election non-trouvée',
+            });
+        }
+        
         const student = await StudentModel.findByPk(studentId);
         if (!student) {
             return res.status(404).json({
@@ -26,11 +30,10 @@ exports.createVote = async(req, res) => {
 
         const existingVote = await VoteModel.findOne({
             where: {
-                year,
+                electionId,
                 studentId
             }
-        });
-        
+        });        
         if (existingVote) {
             return res.status(409).json({
                 success: false,
@@ -38,37 +41,54 @@ exports.createVote = async(req, res) => {
             });
         }
 
-        const candidate = await CandidateModel.findByPk(candidateId);
-        if (!candidate) {
-            return res.status(404).json({
-                success: false,
-                message: 'Candidat non trouvé',
+        if(candidateId){
+
+            const candidate = await CandidateModel.findByPk(candidateId);
+            if (!candidate) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Candidat non trouvé',
+                });
+            }
+
+            transaction = await sequelize.transaction();
+    
+            await CandidateModel.increment('numberOfVote', {
+                by: 1,
+                where: { id: candidateId },
+                transaction
             });
+    
+            await VoteModel.create({
+                electionId,
+                studentId,
+                votedAt: new Date()
+            }, { transaction });
+
+            await transaction.commit();
+
+        }else{
+
+            await VoteModel.create({
+                electionId,
+                studentId,
+                votedAt: new Date(),
+            });
+
+            if(voteStatus === 'BLANK'){
+                election.blankVote += 1;
+            }
+            if(voteStatus === 'DEAD'){
+                election.deadVote += 1;
+            }
+
+            await election.save();
+
         }
 
-        if (candidate.year !== year) {
-            return res.status(400).json({
-                success: false,
-                message: 'Le candidat ne se présente pas cette année',
-            });
-        }
+        election.totalVote += 1;
 
-        transaction = await sequelize.transaction();
-
-        await CandidateModel.increment('numberOfVote', {
-            by: 1,
-            where: { id: candidateId },
-            transaction
-        });
-
-        await VoteModel.create({
-            year,
-            candidateId,
-            studentId,
-            votedAt: new Date()
-        }, { transaction });
-
-        await transaction.commit();
+        await election.save();
 
         return res.status(201).json({
             success: true,
