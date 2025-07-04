@@ -98,3 +98,109 @@ exports.createCandidate = async(req, res) => {
         });
     }
 };
+
+exports.getCandidateById = async(req, res) => { 
+    const { id } = req.params;
+
+    try{
+        
+        let candidate = await CandidateModel.findByPk(id, {
+            include: [
+                {
+                    model: StudentModel,
+                    as: 'student',
+                    attributes: ['fullName', 'email', 'IM', 'sector', 'level']
+                },
+                {
+                    model: ElectionModel,
+                    as: 'election',
+                    attributes: ['profile']
+                }
+            ]
+        });
+        if(!candidate){
+            return res.status(404).json({
+                success: false,
+                message: 'Candidat non-trouvé'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Candidat trouvé',
+            data: candidate
+        });
+        
+    }catch(error){
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du candidat',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+exports.getCandidatesByTerm = async(req, res) => {
+
+    const { term } = req.query;
+
+    try{
+
+        const searchTerm = term?.trim().toLowerCase();
+
+        let candidates = await CandidateModel.findAll({
+            include: [
+                {
+                    model: StudentModel,
+                    as: 'student',
+                    attributes: ['fullName', 'IM', 'email', 'sector', 'level']
+                },
+                {
+                    model: ElectionModel,
+                    as: 'election',
+                    attributes: ['profile']
+                }
+            ]
+        });
+
+        if(!searchTerm){
+            return res.status(200).json({
+                success: true,
+                message: 'Candidats trouvés',
+                data: candidates
+            });
+        }
+
+        candidates = candidates.filter(c => {
+            const student = candidates.student;
+            const election = candidates.election;
+
+            return(
+                student?.fullName?.toLowerCase().includes(searchTerm) ||
+                student?.IM?.toLowerCase().includes(searchTerm) ||
+                student?.email?.toLowerCase().includes(searchTerm) ||
+                student?.sector?.toLowerCase().includes(searchTerm) ||
+                student?.level?.toLowerCase().includes(searchTerm) ||
+                election?.profile?.toLowerCase().includes(searchTerm) ||
+                c?.number.includes(searchTerm) ||
+                c?.slogan?.toLowerCase().includes(searchTerm) ||
+                c?.description.toLowerCase().includes(searchTerm) ||
+                c?.numberOfVote.includes(searchTerm)
+            );
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Candidats récupérés',
+            data: candidates
+        });
+
+
+    }catch(error){
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des candidats',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};

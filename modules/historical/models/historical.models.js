@@ -8,6 +8,37 @@ const Historical = sequelize.define('Historical', {
         primaryKey: true
     },
     electionId: {
-        type: DataTypes.INTEGER
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    profile: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    closedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+    },
+    totalVote: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    blankVote: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    deadVote: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    candidatesResults: {
+        type: DataTypes.JSON,
+        allowNull: false
     }
-})
+}, {
+    tableName: 'historical',
+    timestamps: true
+});
+
+module.exports = Historical;

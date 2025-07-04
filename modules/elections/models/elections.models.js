@@ -22,7 +22,6 @@ const Election = sequelize.define('Election', {
     },
     isOpen: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false,
     }
 }, {
     tableName: 'elections',

@@ -1,4 +1,5 @@
 const StudentModel = require('../models/students.models');
+const ElectionModel = require('../../elections/models/elections.models');
 const VoteModel = require('../../votes/models/votes.models');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
@@ -58,7 +59,6 @@ const sendMailToStudentEmail = async (studentEmail, verificationCode) => {
 };
 
 exports.initialLoginStudent = async (req, res) => {
-  const { year } = req.params;
   const { email, IM } = req.body;
   
     if (!email || !IM) {
@@ -77,13 +77,20 @@ exports.initialLoginStudent = async (req, res) => {
         });
       }
 
-      const studentAlreadyVoted = await VoteModel.findOne({ where: { studentId: student.ID, year }});
-      if(studentAlreadyVoted){
-        return res.status(409).json({
-          success: false,
-          message: 'Cet étudiant a déjà voté pour cette année',
-        });
-      }
+      const openElections = await ElectionModel.findAll({ where: { isOpen: true }});
+      const studentsVotes = await VoteModel.findAll({ where: { studentId: student.ID }});
+      
+      const votedElectionIds = studentsVotes.map(v => v.electionId);
+      const allOpenElectionIds = openElections.map(e => e.ID );
+
+      const hasVotedInAll = allOpenElectionIds.every(electionId => votedElectionIds.includes(electionId));
+
+    if (hasVotedInAll) {
+      return res.status(409).json({
+        success: false,
+        message: 'Cet étudiant a déjà voté pour toutes les élections ouvertes',
+      });
+    }
   
       const verificationCode = generateVerificationCode();
       const codeExpiration = new Date(Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000);
@@ -101,6 +108,7 @@ exports.initialLoginStudent = async (req, res) => {
         message: 'Un code de vérification a été envoyé à votre adresse email',
         data: {
           student: {
+            id: student.ID,
             IM: student.IM,
             email: student.email
           }
@@ -118,9 +126,10 @@ exports.initialLoginStudent = async (req, res) => {
   };
 
   exports.finalLoginStudent = async (req, res) => {
-    const { IM, code } = req.body;
+    const { id } = req.params;
+    const { code } = req.body;
   
-    if (!IM || !code) {
+    if (!code) {
       return res.status(400).json({
         success: false,
         message: 'IM et code sont requis',
@@ -128,8 +137,7 @@ exports.initialLoginStudent = async (req, res) => {
     }
   
     try {
-      const student = await StudentModel.findOne({ where: { IM } });
-      
+      const student = await StudentModel.findByPk(id);      
       if (!student) {
         return res.status(401).json({
           success: false,
@@ -158,6 +166,7 @@ exports.initialLoginStudent = async (req, res) => {
           token,
           refreshToken,
           student: {
+            id: student.ID,
             IM: student.IM,
             fullName: student.fullName,
             email: student.email
@@ -227,5 +236,74 @@ exports.createStudent = async (req, res) => {
       message: 'Erreur lors de la création de l\'étudiant',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  }
+};
+
+exports.getStudentByTerm = async(req, res) => {
+  const { term } = req.query;
+
+  try{
+    const searchTerm = term?.trim().toLowerCase();
+
+    let students = await StudentModel.findAll();
+
+    if (!searchTerm) {
+            return res.status(200).json({
+                success: true,
+                data: students
+            });
+    }
+
+    students = students.filter(s => {
+      const matchStudent = [
+        s.fullName?.toString(),
+        s.IM?.toString(),
+        s.email?.toString(),
+        s.sector?.toString(),
+        s.level?.toString(),
+      ].some(field => field?.toLowerCase().includes(searchTerm));
+      return matchStudent;  
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: students,
+    });
+
+  }catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la recherche',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+  }
+
+};
+
+exports.getStudentById = async(req, res) => {
+  const { id } = req.params;
+
+  try{
+
+    const student = await StudentModel.findByPk(id);
+    if(!student){
+      return res.status(404).json({
+        success: false,
+        message: 'Etudiant non-trouvé'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Etudiant trouvé',
+      data: student,
+    });
+
+  }catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération de l"étudiant',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
   }
 };

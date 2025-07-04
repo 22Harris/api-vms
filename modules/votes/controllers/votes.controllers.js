@@ -106,3 +106,100 @@ exports.createVote = async(req, res) => {
         });
     }
 };
+
+exports.searchVoteByTerm = async(req, res) => {
+
+    const { term } = req.query;
+    try{
+        const searchTerm = term?.trim().toLowerCase();
+
+        let votes = await VoteModel.findAll({
+            include: [
+                {
+                    model: StudentModel,
+                    as: 'student',
+                    attributes: ['fullName', 'IM', 'email', 'sector', 'level']
+                },
+                {
+                    model: ElectionModel,
+                    as: 'election',
+                    attributes: ['profile']
+                }
+            ]
+        });
+        if(!searchTerm){
+            return res.status(200).json({
+                success: true,
+                message: 'Votes récupérées',
+                data: votes
+            });
+        }
+
+        votes = votes.filter(v => {
+            const student = votes.student;
+            const election = votes.election;
+            return (
+                student?.fullName?.toLowerCase().includes(searchTerm) ||
+                student?.IM?.toLowerCase().includes(searchTerm) ||
+                student?.email?.toLowerCase().includes(searchTerm) ||
+                student?.sector?.toLowerCase().includes(searchTerm) ||
+                student?.level?.toLowerCase().includes(searchTerm) ||
+                election?.profile?.toLowerCase().includes(searchTerm) ||
+                v.votedAt?.toISOString().toLowerCase().includes(searchTerm)
+            );
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Résultat de la recherche',
+            data: votes
+        });
+
+    }catch(error){
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du candidat',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+exports.getVoteDetails = async(req, res) => {
+    const { id } = req.params;
+
+    try{
+        const vote = await VoteModel.findByPk(id, {
+        include: [
+            {
+                model: StudentModel,
+                as: 'student',
+                attributes: ['fullName', 'email', 'IM', 'sector', 'level']
+            },
+            {
+                model: ElectionModel,
+                as: 'election',
+                attributes: ['profile']
+            }
+        ]
+    });
+    if(!vote){
+        return res.status(404).json({
+            success: false,
+            message: 'vote non-trouvé',
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: 'vote trouvé',
+        data: vote
+    });
+
+    }catch(error){
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du vote',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
