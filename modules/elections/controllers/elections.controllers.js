@@ -22,6 +22,7 @@ exports.createElection = async(req, res) => {
             blankVote: 0,
             deadVote: 0,
             isOpen: true,
+            isAvailable: false,
         });
 
         return res.status(200).json({
@@ -194,22 +195,33 @@ exports.getElectionDetailsById = async (req, res) => {
 
 exports.getElectionsToVote = async (req, res) => {
     try {
-        const elections = await ElectionModel.findAll({
-            where: { isOpen: true },
-            include: [
-                {
-                    model: CandidateModel,
-                    as: 'candidates',
-                    attributes: ['ID', 'number', 'numberOfVote', 'slogan', 'description'],
-                    include: [
-                        {
-                            model: StudentModel,
-                            as: 'student',
-                            attributes: ['ID', 'fullName', 'IM', 'sector', 'level']
-                        }
-                    ]
-                }
-            ]
+        // const elections = await ElectionModel.findAll({
+        //     where: { isAvailable: true },
+        //     include: [
+        //         {
+        //             model: CandidateModel,
+        //             as: 'candidates',
+        //             attributes: ['ID', 'number', 'numberOfVote', 'slogan', 'description'],
+        //             include: [
+        //                 {
+        //                     model: StudentModel,
+        //                     as: 'student',
+        //                     attributes: ['ID', 'fullName', 'IM', 'sector', 'level']
+        //                 }
+        //             ]
+        //         }
+        //     ]
+        // });
+
+        let elections = await ElectionModel.findAll({
+            where: { isAvailable : true }
+        });
+
+        elections = elections.map( (e) => {
+            return { 
+                ID: e.ID,
+                profile : e.profile 
+            }
         });
 
         return res.status(200).json({

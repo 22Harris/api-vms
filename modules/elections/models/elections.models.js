@@ -20,6 +20,9 @@ const Election = sequelize.define('Election', {
     deadVote: {
         type: DataTypes.INTEGER,
     },
+    isAvailable: {
+        type: DataTypes.BOOLEAN
+    },
     isOpen: {
         type: DataTypes.BOOLEAN,
     }
