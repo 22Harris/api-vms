@@ -204,3 +204,51 @@ exports.getCandidatesByTerm = async(req, res) => {
         });
     }
 };
+
+exports.getCandidatesByElectionId = async(req, res) => {
+    const { id } = req.params;
+
+    try{
+        const electionExists = await ElectionModel.findByPk(id);
+        if(!electionExists){
+            return res.status(404).json({
+                success: false,
+                message: 'Election non-trouvée',
+            });
+        }
+
+        let candidates = await CandidateModel.findAll({
+            where: { electionId: id },
+            include : [
+                {
+                    model: StudentModel,
+                    as: 'student',
+                    attributes: ['fullName', 'sector', 'level']
+                }
+            ]
+        });
+
+        candidates = candidates.map((c) => {
+            return {
+                profile: electionExists.profile,
+                ID: c.ID,
+                number: c.number,
+                slogan: c.slogan,
+                description: c.description,
+                student: c.student
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Liste des candidats récupérée avec succès',
+            data: candidates
+        });
+    }catch(error){
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération de la liste des candidats',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
