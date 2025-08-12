@@ -17,7 +17,7 @@ const Election = sequelize.define('Election', {
     blankVote: {
         type: DataTypes.INTEGER,
     },
-    deadVote: {
+    invalidVote: {
         type: DataTypes.INTEGER,
     },
     isAvailable: {

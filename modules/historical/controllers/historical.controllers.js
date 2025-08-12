@@ -22,7 +22,7 @@ exports.getHistoricalByTerm = async (req, res) => {
                 h.profile?.toString(),
                 h.totalVote?.toString(),
                 h.blankVote?.toString(),
-                h.deadVote?.toString(),
+                h.invalidVote?.toString(),
                 h.closedAt?.toISOString()
             ].some(field =>
                 field?.toLowerCase().includes(searchTerm)

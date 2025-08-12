@@ -20,7 +20,7 @@ exports.createElection = async(req, res) => {
             profile,
             totalVote: 0,
             blankVote: 0,
-            deadVote: 0,
+            invalidVote: 0,
             isOpen: true,
             isAvailable: false,
         });
@@ -116,7 +116,7 @@ exports.closeElection = async (req, res) => {
             closedAt: new Date(),
             totalVote: election.totalVote,
             blankVote: election.blankVote,
-            deadVote: election.deadVote,
+            invalidVote: election.invalidVote,
             candidatesResults
         });
 

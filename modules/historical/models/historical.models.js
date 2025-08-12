@@ -28,7 +28,7 @@ const Historical = sequelize.define('Historical', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    deadVote: {
+    invalidVote: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
