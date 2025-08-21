@@ -6,8 +6,7 @@ const sequelize = require('../../../configs/sequelize');
 
 
 exports.createVote = async(req, res) => {
-    const { electionId, studentId } = req.params;
-    const { candidateId, voteStatus } = req.body;
+    const { studentId, iDs, electionId } = req.body;
 
     let transaction;
     try {
@@ -37,9 +36,11 @@ exports.createVote = async(req, res) => {
         if (existingVote) {
             return res.status(409).json({
                 success: false,
-                message: 'Cet étudiant a déjà voté pour cette année',
+                message: 'Cet étudiant a déjà voté pour cette élection',
             });
         }
+
+        
 
         if(candidateId){
 
@@ -79,7 +80,7 @@ exports.createVote = async(req, res) => {
                 election.blankVote += 1;
             }
             if(voteStatus === 'DEAD'){
-                election.deadVote += 1;
+                election.invalidVote += 1;
             }
 
             await election.save();
